@@ -1,22 +1,13 @@
 import { Client } from "@notionhq/client"
-import { AgendaPage } from "./types/notion"
-
-type AgendaItemProperties = {
-    calendarId: string,
-    title: string,
-    startDate: string,
-    endDate: string,
-    description: string | null
-}
+import { AgendaPage, AgendaItemProperties } from "./types/notion"
 
 
-class NotionAgenda {
+class NotionCalendar {
 
     private notion
     private databaseId: string
 
     constructor(authToken: string, databaseId: string) {
-        console.log(authToken, databaseId)
         this.databaseId = databaseId
         this.notion = new Client({ auth: authToken })
     }
@@ -31,11 +22,11 @@ class NotionAgenda {
                 title: [{ text: { content: title } }],
             },
             calendarId: {
-                "rich_text": [
+                rich_text: [
                     {
-                        "type": "text",
-                        "text": {
-                            "content": calendarId
+                        type: "text",
+                        text: {
+                            content: calendarId
                         }
                     },
                 ]
@@ -51,11 +42,11 @@ class NotionAgenda {
 
         if (description) {
             prop.Description = {
-                "rich_text": [
+                rich_text: [
                     {
-                        "type": "text",
-                        "text": {
-                            "content": description
+                        type: "text",
+                        text: {
+                            content: description
                         }
                     },
                 ]
@@ -74,6 +65,30 @@ class NotionAgenda {
         return this.notion.blocks.delete({ block_id: blockId });
     }
 
+    public async findLastSyncToken(): Promise<string | undefined> {
+        const response = await this.notion.databases.query({
+            database_id: this.databaseId,
+            filter: {
+                property: 'calendarId',
+                rich_text: {
+                    is_not_empty: true
+                }
+            },
+            sorts: [{
+                property: "updatedAt",
+                direction: "descending"
+            }]
+
+        })
+
+
+        if (response.results.length === 0) return
+        const firstResult = response.results[0]
+        //@ts-ignore
+        const prop: AgendaPage = firstResult.properties
+        return prop.syncToken?.rich_text[0]?.plain_text
+    }
+
 }
 
-export default NotionAgenda
+export default NotionCalendar
