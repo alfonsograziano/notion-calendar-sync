@@ -89,6 +89,21 @@ class NotionCalendar {
         return prop.syncToken?.rich_text[0]?.plain_text
     }
 
+    async findNotionItemsFromCalendarIds(ids: string[]) {
+        const or = ids.map(id => ({
+            property: "calendarId",
+            rich_text: {
+                equals: id
+            }
+        }))
+        const filter = { or }
+
+        return this.notion.databases.query({
+            database_id: this.databaseId,
+            filter
+        });
+    }
+
 }
 
 export default NotionCalendar

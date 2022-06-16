@@ -13,7 +13,7 @@ console.log("Calendar_ID => ", calendarId)
 
 if (notionToken && databaseId && calendarId) {
     const agenda = new NotionCalendar(notionToken, databaseId)
-    const gCalendar = new GCalendar(calendarId, null)
+    const gCalendar = new GCalendar(calendarId)
     const sync = new CalendarSync(gCalendar, agenda)
 
     const init = async () => {
@@ -32,8 +32,12 @@ if (notionToken && databaseId && calendarId) {
     // init()
 
     const syncNow = async () => {
-        const token = await sync.findSyncToken()
-        console.log("Token => ", token)
+        // const token = await sync.findSyncToken()
+        // console.log("Token => ", token)
+        const token = "CNiKiZSDsPgCENiKiZSDsPgCGAUggpPo2AE="
+        gCalendar.setSyncToken(token)
+
+        sync.sync()
     
     }
 

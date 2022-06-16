@@ -6,14 +6,12 @@ import credentials from '../credentials.json'
 export default class GCalendar {
 
     private calendar
-    // private syncToken
+    private syncToken: string | undefined
     private calendarId
-    private dbHelper
     private client
 
-    constructor(calendarId: string, dbHelper: any) {
+    constructor(calendarId: string) {
         this.calendarId = calendarId
-        this.dbHelper = dbHelper
 
         this.client = new JWT({
             email: credentials.client_email,
@@ -52,4 +50,50 @@ export default class GCalendar {
 
         return syncToken
     }
+
+    setSyncToken(token: string) {
+        this.syncToken = token
+    }
+
+    getSyncToken(){
+       return this.syncToken 
+    }
+
+    async getNewEvents() {
+        const items = []
+        let nextPageToken = null
+
+        while (true) {
+            const client = this.client
+            const params: {
+                calendarId: string,
+                auth: typeof client,
+                pageToken: string | undefined,
+                syncToken?: string | undefined
+            } = {
+                calendarId: this.calendarId,
+                auth: client,
+                pageToken: nextPageToken ? nextPageToken : undefined,
+            }
+            if (typeof this.syncToken !== "undefined") {
+                params.syncToken = this.syncToken
+            }
+            const res = await this.calendar.events.list(params)
+
+            nextPageToken = res.data?.nextPageToken
+            if (res.data) {
+                const calendarEvents = res.data.items
+                if (typeof calendarEvents !== "undefined") {
+                    items.push(...calendarEvents)
+                }
+
+                if (res.data.nextSyncToken) {
+                    this.syncToken = res.data.nextSyncToken
+                    return { ...res.data, items }
+                }
+            }
+        }
+    }
+
+    
 }
