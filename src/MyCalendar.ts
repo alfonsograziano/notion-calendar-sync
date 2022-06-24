@@ -47,7 +47,7 @@ export default class GCalendar {
             syncToken = res.data.nextSyncToken
             nextPageToken = res.data.nextPageToken
         }
-
+        
         return syncToken
     }
 
@@ -55,8 +55,8 @@ export default class GCalendar {
         this.syncToken = token
     }
 
-    getSyncToken(){
-       return this.syncToken 
+    getSyncToken() {
+        return this.syncToken
     }
 
     async getNewEvents() {
@@ -89,11 +89,16 @@ export default class GCalendar {
 
                 if (res.data.nextSyncToken) {
                     this.syncToken = res.data.nextSyncToken
+                    console.log("Changed next sync token => ", this.syncToken)
                     return { ...res.data, items }
                 }
             }
         }
     }
 
-    
+    getCalendarId() {
+        return this.calendarId
+    }
+
+
 }

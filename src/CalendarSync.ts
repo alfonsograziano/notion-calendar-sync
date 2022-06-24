@@ -15,7 +15,7 @@ export default class CalendarSync {
         private notionCalendar: NotionCalendar
     ) { }
 
-    async findSyncToken() {
+    async findSyncToken(): Promise<string>  {
         let result: string | undefined
 
         //Try locally
@@ -33,6 +33,24 @@ export default class CalendarSync {
         }
 
         return result
+    }
+
+    async isFirstSync() {
+        let result: string | undefined
+
+        //Try locally
+        result = this.gCalendar.getSyncToken()
+        if (typeof result === "undefined") {
+
+            //Try on Notion
+            result = await this.notionCalendar.findLastSyncToken()
+
+            if (typeof result === "undefined") {
+                return true
+            }
+        }
+
+        return false
     }
 
     async sync() {
@@ -72,7 +90,9 @@ export default class CalendarSync {
     }
 
     splitItems(items: calendar_v3.Schema$Event[], itemsToUpdate: QueryDatabaseResponse) {
-        const updates = itemsToUpdate.results.map(item => {
+
+        const results = itemsToUpdate.results
+        const updates = results.map(item => {
             //@ts-ignore
             const prop: AgendaPage = item.properties
             return prop.calendarId.rich_text[0].plain_text
@@ -115,15 +135,86 @@ export default class CalendarSync {
         }
     }
 
-    updateItems(items: calendar_v3.Schema$Event[]) {
+    async updateItems(items: calendar_v3.Schema$Event[]) {
+        console.log(`Updating ${items.length} items`)
+        if (items.length === 0) return
+
+        const ids = items.map(item => item.id)
+        if (isStrings(ids)) {
+            //From calendar items get notion pages
+            const { results } = await this.notionCalendar.findNotionItemsFromCalendarIds(ids)
+
+            const promises = []
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i]
+                //@ts-ignore
+                const page = results.find(result => result.properties.calendarId.rich_text[0].text.content === item.id)
+                if (!page) continue
+                promises.push(this.notionCalendar.updateItem(page.id, this.generateAgendaItemProperties(item)))
+            }
+
+            return Promise.allSettled(promises)
+        }
 
     }
 
     createItems(items: calendar_v3.Schema$Event[]) {
+        console.log(`Creating ${items.length} items`)
+        if (items.length === 0) return
 
+        const promises = []
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i]
+            const newPage = this.generateAgendaItemProperties(item)
+            console.log(newPage)
+            promises.push(this.notionCalendar.createNewItem(newPage))
+        }
+
+        return Promise.allSettled(promises)
+    }
+
+    generateAgendaItemProperties(item: calendar_v3.Schema$Event): AgendaItemProperties {
+        const getStartTime = () => {
+            if (item.start) {
+                if (item.start.dateTime) return item.start.dateTime
+                if (item.start.date) return item.start.date
+            }
+            return new Date().toISOString()
+        }
+
+        const getEndTime = () => {
+            if (item.end) {
+                if (item.end.dateTime) return item.end.dateTime
+                if (item.end.date) return item.end.date
+            }
+            return new Date().toISOString()
+        }
+
+        return {
+            calendarId: item.id || "",
+            title: item.summary || "",
+            startDate: getStartTime(),
+            endDate: getEndTime(),
+            description: item.description || "",
+            syncToken: this.gCalendar.getSyncToken() || ""
+        }
     }
 
 
 
+    async createTestingItem() {
+        const token = await this.findSyncToken()
+
+        await this.notionCalendar.createNewItem({
+            title: "Test event",
+            description: "This is a test event to add an initial syncToken, please don't delete for now",
+            startDate: new Date().toISOString(),
+            endDate: new Date().toISOString(),
+            syncToken: token,
+            calendarId: "TEST_ID"
+        })
+
+        console.log("Testing event created!")
+    }
 
 }

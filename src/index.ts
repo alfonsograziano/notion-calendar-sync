@@ -16,29 +16,13 @@ if (notionToken && databaseId && calendarId) {
     const gCalendar = new GCalendar(calendarId)
     const sync = new CalendarSync(gCalendar, agenda)
 
-    const init = async () => {
-        const data = await agenda.getDataFromDB()
-        console.log(JSON.stringify(data, undefined, 4))
-        // await agenda.createNewItem({
-        //     title: "1",
-        //     description: "Desc1",
-        //     calendarId: "1234",
-        //     startDate: "2022-06-14T19:45:11.264Z",
-        //     endDate: "2022-06-15T19:45:11.264Z",
-        //     syncToken:"1234"
-        // })
-    }
-
-    // init()
 
     const syncNow = async () => {
-        // const token = await sync.findSyncToken()
-        // console.log("Token => ", token)
-        const token = "CNiKiZSDsPgCENiKiZSDsPgCGAUggpPo2AE="
-        gCalendar.setSyncToken(token)
-
+        if(await sync.isFirstSync()){
+            console.log("This is your first sync, I'll create a test event for you :) ")
+            await sync.createTestingItem()
+        }
         sync.sync()
-    
     }
 
     syncNow()

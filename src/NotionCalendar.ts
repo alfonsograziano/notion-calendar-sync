@@ -16,7 +16,7 @@ class NotionCalendar {
         return this.notion.databases.query({ database_id: this.databaseId })
     }
 
-    private generateItem({ calendarId, title, startDate, endDate, description }: AgendaItemProperties): AgendaPage {
+    private generateItem({ calendarId, title, startDate, endDate, description, syncToken }: AgendaItemProperties): AgendaPage {
         const prop: AgendaPage = {
             Name: {
                 title: [{ text: { content: title } }],
@@ -52,6 +52,19 @@ class NotionCalendar {
                 ]
             }
         }
+
+        if (syncToken) {
+            prop.syncToken = {
+                rich_text: [
+                    {
+                        type: "text",
+                        text: {
+                            content: syncToken
+                        }
+                    },
+                ]
+            }
+        }
         return prop
     }
 
@@ -63,6 +76,12 @@ class NotionCalendar {
 
     public async deleteItem(blockId: string) {
         return this.notion.blocks.delete({ block_id: blockId });
+    }
+
+    public async updateItem(pageId: string, properties: AgendaItemProperties) {
+        const newPage: AgendaPage = this.generateItem(properties)
+        //@ts-ignore    
+        return this.notion.pages.update({ page_id: pageId, properties: newPage });
     }
 
     public async findLastSyncToken(): Promise<string | undefined> {
@@ -103,6 +122,7 @@ class NotionCalendar {
             filter
         });
     }
+
 
 }
 
