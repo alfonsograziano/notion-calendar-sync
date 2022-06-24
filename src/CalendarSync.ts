@@ -64,7 +64,7 @@ export default class CalendarSync {
         //This will also update the syncToken inside the gCalendar obj
         console.log("Searching for new events...")
         const data = await this.gCalendar.getNewEvents()
-        console.debug(JSON.stringify(data, undefined, 4))
+        // console.debug(JSON.stringify(data, undefined, 4))
         if (data.items.length === 0) return console.log("Cannot find new updates :)")
 
         //Find items to update from Notion
@@ -75,7 +75,7 @@ export default class CalendarSync {
             // //divide items between to update and to create
             const { toUpdate, toCreate, toDelete } = this.splitItems(data.items, itemsToUpdate)
 
-            console.log({ toUpdate, toCreate, toDelete })
+            // console.log({ toUpdate, toCreate, toDelete })
 
             const results = await Promise.allSettled([
                 this.deleteItems(toDelete),
@@ -166,7 +166,6 @@ export default class CalendarSync {
         for (let i = 0; i < items.length; i++) {
             const item = items[i]
             const newPage = this.generateAgendaItemProperties(item)
-            console.log(newPage)
             promises.push(this.notionCalendar.createNewItem(newPage))
         }
 

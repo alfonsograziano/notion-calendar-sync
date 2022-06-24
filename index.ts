@@ -1,6 +1,6 @@
-import NotionCalendar from "./NotionCalendar"
-import GCalendar from "./MyCalendar"
-import CalendarSync from "./CalendarSync"
+import NotionCalendar from "./src/NotionCalendar"
+import GCalendar from "./src/MyCalendar"
+import CalendarSync from "./src/CalendarSync"
 import 'dotenv/config';
 
 const notionToken = process.env.NOTION_TOKEN
