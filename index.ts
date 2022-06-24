@@ -11,22 +11,21 @@ console.log("Token => ", notionToken)
 console.log("DB_ID => ", databaseId)
 console.log("Calendar_ID => ", calendarId)
 
-if (notionToken && databaseId && calendarId) {
-    const agenda = new NotionCalendar(notionToken, databaseId)
-    const gCalendar = new GCalendar(calendarId)
-    const sync = new CalendarSync(gCalendar, agenda)
+const agenda = new NotionCalendar(notionToken, databaseId)
+const gCalendar = new GCalendar(calendarId)
+const sync = new CalendarSync(gCalendar, agenda)
 
 
-    const syncNow = async () => {
-        if(await sync.isFirstSync()){
-            console.log("This is your first sync, I'll create a test event for you :) ")
-            await sync.createTestingItem()
-        }
-        sync.sync()
+const syncNow = async () => {
+    if (await sync.isFirstSync()) {
+        console.log("This is your first sync, I'll create a test event for you :) ")
+        await sync.createTestingItem()
     }
-
-    syncNow()
-
-} else {
-    console.log("Cannot find params")
+    await sync.sync()
 }
+
+
+exports.handler =  async function(event: any, context: any) {
+    await syncNow()
+    return "Ok!"
+  }
